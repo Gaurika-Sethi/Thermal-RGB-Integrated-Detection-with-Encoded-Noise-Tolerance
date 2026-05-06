@@ -5,7 +5,7 @@ import cv2
 model = YOLO("yolov8n.pt")
 
 # Read image
-img = cv2.imread("../data/sample.jpg")
+img = cv2.imread("../data/rgb/sample.jpg")
 
 # Resize (IMPORTANT — consistency)
 img = cv2.resize(img, (640, 640))
@@ -20,3 +20,5 @@ cv2.imwrite("../outputs/yolo_output.jpg", output)
 print("Saved output as yolo_output.jpg")
 print(results[0].boxes)
 print("Detections:", len(results[0].boxes))
+print("RGB Shape:", img.shape)
+print("Thermal Shape:", img_color.shape)
