@@ -1,85 +1,104 @@
 from ultralytics import YOLO
 import cv2
 import matplotlib.pyplot as plt
+import os
 
 # -----------------------------------
 # Load Models
 # -----------------------------------
-yolo_model = YOLO("../models/yolov8n.pt")
+yolo_model = YOLO("../models/yolov8m.pt")
 rtdetr_model = YOLO("../models/rtdetr-l.pt")
 
 # -----------------------------------
-# Load Image
+# RGB Folder
 # -----------------------------------
-img = cv2.imread("../data/rgb/sample.jpg")
-
-if img is None:
-    print("Image not found!")
-    exit()
-
-# Resize for consistency
-img = cv2.resize(img, (640, 640))
+rgb_folder = "../data/rgb"
 
 # -----------------------------------
-# Run YOLO
+# Loop Through Images
 # -----------------------------------
-yolo_results = yolo_model(img)
+for file in os.listdir(rgb_folder):
 
-# -----------------------------------
-# Run RT-DETR
-# -----------------------------------
-rtdetr_results = rtdetr_model(img)
+    path = f"{rgb_folder}/{file}"
 
-# -----------------------------------
-# Print Detection Counts
-# -----------------------------------
-print("YOLO detections:", len(yolo_results[0].boxes))
-print("RT-DETR detections:", len(rtdetr_results[0].boxes))
+    img = cv2.imread(path)
 
-# -----------------------------------
-# Print Confidence Scores
-# -----------------------------------
-print("\nYOLO Confidences:")
-print(yolo_results[0].boxes.conf)
+    if img is None:
+        print("Failed to load:", file)
+        continue
 
-print("\nRT-DETR Confidences:")
-print(rtdetr_results[0].boxes.conf)
+    # Resize
+    img = cv2.resize(img, (640, 640))
 
-# -----------------------------------
-# Draw Detection Outputs
-# -----------------------------------
-yolo_output = yolo_results[0].plot()
-rtdetr_output = rtdetr_results[0].plot()
+    # -----------------------------------
+    # Run YOLO
+    # -----------------------------------
+    yolo_results = yolo_model(img)
 
-# Convert BGR → RGB for matplotlib
-yolo_output = cv2.cvtColor(yolo_output, cv2.COLOR_BGR2RGB)
-rtdetr_output = cv2.cvtColor(rtdetr_output, cv2.COLOR_BGR2RGB)
+    # -----------------------------------
+    # Run RT-DETR
+    # -----------------------------------
+    rtdetr_results = rtdetr_model(img)
 
-# -----------------------------------
-# Show YOLO Output
-# -----------------------------------
-plt.figure(figsize=(8, 8))
-plt.imshow(yolo_output)
-plt.title("YOLO Output")
-plt.axis("off")
-plt.show()
+    # -----------------------------------
+    # Detection Counts
+    # -----------------------------------
+    print(f"\n===== {file} =====")
 
-# -----------------------------------
-# Show RT-DETR Output
-# -----------------------------------
-plt.figure(figsize=(8, 8))
-plt.imshow(rtdetr_output)
-plt.title("RT-DETR Output")
-plt.axis("off")
-plt.show()
+    print("\nYOLO detections:",
+          len(yolo_results[0].boxes))
 
-# -----------------------------------
-# Save Outputs
-# -----------------------------------
-cv2.imwrite("../outputs/yolo_compare.jpg",
-            cv2.cvtColor(yolo_output, cv2.COLOR_RGB2BGR))
+    print("RT-DETR detections:",
+          len(rtdetr_results[0].boxes))
 
-cv2.imwrite("../outputs/rtdetr_compare.jpg",
-            cv2.cvtColor(rtdetr_output, cv2.COLOR_RGB2BGR))
+    # -----------------------------------
+    # YOLO Confidences
+    # -----------------------------------
+    print("\nYOLO Confidences:")
+    print(yolo_results[0].boxes.conf)
 
-print("\nOutputs saved in outputs/ folder")
+    # -----------------------------------
+    # RT-DETR Confidences
+    # -----------------------------------
+    print("\nRT-DETR Confidences:")
+    print(rtdetr_results[0].boxes.conf)
+
+    # -----------------------------------
+    # Draw YOLO output
+    # -----------------------------------
+    yolo_output = yolo_results[0].plot()
+
+    # Convert BGR → RGB
+    yolo_output = cv2.cvtColor(
+        yolo_output,
+        cv2.COLOR_BGR2RGB
+    )
+
+    # -----------------------------------
+    # Draw RT-DETR output
+    # -----------------------------------
+    rtdetr_output = rtdetr_results[0].plot()
+
+    # Convert BGR → RGB
+    rtdetr_output = cv2.cvtColor(
+        rtdetr_output,
+        cv2.COLOR_BGR2RGB
+    )
+
+    # -----------------------------------
+    # Show YOLO Result
+    # -----------------------------------
+    plt.figure(figsize=(8,8))
+    plt.imshow(yolo_output)
+    plt.title(f"YOLO: {file}")
+    plt.axis("off")
+    plt.show()
+
+    # -----------------------------------
+    # Show RT-DETR Result
+    # -----------------------------------
+    plt.figure(figsize=(8,8))
+    plt.imshow(rtdetr_output)
+    plt.title(f"RT-DETR: {file}")
+    plt.axis("off")
+    plt.show()
