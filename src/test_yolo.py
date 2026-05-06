@@ -1,24 +1,53 @@
 from ultralytics import YOLO
 import cv2
+import matplotlib.pyplot as plt
+import os
 
-# Load model (downloads automatically first time)
-model = YOLO("yolov8n.pt")
+# -----------------------------------
+# Load YOLO Model
+# -----------------------------------
+model = YOLO("../models/yolov8m.pt")
 
-# Read image
-img = cv2.imread("../data/rgb/sample.jpg")
+# -----------------------------------
+# RGB Folder
+# -----------------------------------
+rgb_folder = "../data/rgb"
 
-# Resize (IMPORTANT — consistency)
-img = cv2.resize(img, (640, 640))
+# -----------------------------------
+# Loop Through Images
+# -----------------------------------
+for file in os.listdir(rgb_folder):
 
-# Run detection
-results = model(img)
+    path = f"{rgb_folder}/{file}"
 
-# Show result
-output = results[0].plot()
+    img = cv2.imread(path)
 
-cv2.imwrite("../outputs/yolo_output.jpg", output)
-print("Saved output as yolo_output.jpg")
-print(results[0].boxes)
-print("Detections:", len(results[0].boxes))
-print("RGB Shape:", img.shape)
-print("Thermal Shape:", img_color.shape)
+    if img is None:
+        print("Failed to load:", file)
+        continue
+
+    # Resize
+    img = cv2.resize(img, (640, 640))
+
+    # Run YOLO
+    results = model(img)
+
+    # Detection count
+    print(f"\n{file}")
+    print("Detections:", len(results[0].boxes))
+
+    # Confidence scores
+    print("Confidences:", results[0].boxes.conf)
+
+    # Draw detections
+    output = results[0].plot()
+
+    # Convert BGR → RGB
+    output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
+
+    # Show result
+    plt.figure(figsize=(8,8))
+    plt.imshow(output)
+    plt.title(f"YOLO Detection: {file}")
+    plt.axis("off")
+    plt.show()
