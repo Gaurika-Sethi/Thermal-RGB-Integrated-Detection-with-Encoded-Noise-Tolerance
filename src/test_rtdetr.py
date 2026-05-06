@@ -1,4 +1,5 @@
 from ultralytics import YOLO
+from utils import preprocess_rgb, preprocess_thermal
 import cv2
 import matplotlib.pyplot as plt
 import os
@@ -20,14 +21,11 @@ for file in os.listdir(rgb_folder):
 
     path = f"{rgb_folder}/{file}"
 
-    img = cv2.imread(path)
+    img = preprocess_rgb(path)
 
     if img is None:
         print("Failed to load:", file)
         continue
-
-    # Resize
-    img = cv2.resize(img, (640, 640))
 
     # -----------------------------------
     # Run RT-DETR

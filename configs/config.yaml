@@ -1,0 +1,66 @@
+# =========================================
+# MODEL CONFIGURATION
+# =========================================
+
+models:
+
+  yolo_model: "../models/yolov8s.pt"
+
+  rtdetr_model: "../models/rtdetr-l.pt"
+
+
+# =========================================
+# IMAGE SETTINGS
+# =========================================
+
+image:
+
+  local_size: 320
+
+  train_size: 640
+
+
+# =========================================
+# DETECTION SETTINGS
+# =========================================
+
+detection:
+
+  confidence_threshold: 0.25
+
+
+# =========================================
+# PATHS
+# =========================================
+
+paths:
+
+  rgb_data: "../data/rgb"
+
+  thermal_data: "../data/thermal"
+
+  rgb_dev: "../data/dev_slice/rgb"
+
+  thermal_dev: "../data/dev_slice/thermal"
+
+  outputs: "../outputs"
+
+
+# =========================================
+# DEVICE
+# =========================================
+
+device:
+
+  type: "cpu"
+
+
+# =========================================
+# THERMAL PREPROCESSING
+# =========================================
+
+thermal:
+
+  clahe_clip_limit: 2.0
+
+  clahe_grid_size: 8
