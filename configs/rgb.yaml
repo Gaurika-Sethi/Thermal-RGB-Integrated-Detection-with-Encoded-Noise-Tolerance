@@ -1,0 +1,7 @@
+path: /content/drive/MyDrive/thermal_vision_project/datasets/coco_subset
+
+train: images/train
+val: images/val
+
+names:
+  0: person
