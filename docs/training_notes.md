@@ -108,3 +108,29 @@ Compared to pretrained YOLO:
 - pretrained YOLO still detects multiple COCO object classes
 - fine-tuned detections appear cleaner and more human-focused
 - person localization appears more precise after fine-tuning
+
+# Failure Analysis
+
+## Common False Positives
+
+- posters
+- partial bodies
+- background human-like shapes
+
+---
+
+# Common Missed Detections
+
+- small humans
+- heavily occluded humans
+- crowded scenes
+
+---
+
+# Confidence Observations
+
+- high confidence is not always correct
+- low confidence detections can still be valid
+- crowded scenes reduce confidence stability
+
+---
