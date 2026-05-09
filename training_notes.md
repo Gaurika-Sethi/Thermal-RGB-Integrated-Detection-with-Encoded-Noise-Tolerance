@@ -100,6 +100,11 @@ Compared to pretrained YOLO:
 
 ---
 
-## Important Insight
+## Fine-Tuning Comparison
 
-Confidence does not always equal correctness.
+Compared to pretrained YOLO:
+
+- fine-tuned model focuses specifically on person detection
+- pretrained YOLO still detects multiple COCO object classes
+- fine-tuned detections appear cleaner and more human-focused
+- person localization appears more precise after fine-tuning
