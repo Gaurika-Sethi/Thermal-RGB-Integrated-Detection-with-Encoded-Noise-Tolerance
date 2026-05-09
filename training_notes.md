@@ -71,3 +71,35 @@ Examples:
 - Drive saving worked
 - checkpoints saved correctly
 - Colab runtime stable
+
+# Evaluation Observations
+
+## Strengths
+
+- clean full-body detection good
+- stable confidence on visible humans
+- inference speed fast
+
+---
+
+## Weaknesses
+
+- crowded scenes difficult
+- small humans sometimes missed
+- occasional duplicate detections
+
+---
+
+## Fine-Tuning Comparison
+
+Compared to pretrained YOLO:
+
+- person consistency improved
+- confidence appears more stable
+- fewer irrelevant detections
+
+---
+
+## Important Insight
+
+Confidence does not always equal correctness.
