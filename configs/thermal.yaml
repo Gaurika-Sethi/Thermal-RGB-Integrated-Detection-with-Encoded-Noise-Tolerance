@@ -1,0 +1,7 @@
+path: /content/drive/MyDrive/thermal_vision_project/datasets/flir
+
+train: train/images
+val: valid/images
+
+names:
+  0: person
