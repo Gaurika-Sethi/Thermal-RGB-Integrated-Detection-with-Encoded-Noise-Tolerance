@@ -1,4 +1,4 @@
-path: /content/drive/MyDrive/thermal_vision_project/datasets/flir
+path: /content/drive/MyDrive/thermal_vision_project/datasets/LLVIP_YOLO
 
 train: train/images
 val: valid/images
