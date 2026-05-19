@@ -16,7 +16,27 @@ class FeatureExtractor:
 
         def fn(module, input, output):
 
-            self.features[layer_name] = output.detach().cpu()
+            # Handle tuple outputs
+            if isinstance(output, tuple):
+
+                processed = []
+
+                for item in output:
+
+                    if torch.is_tensor(item):
+                        processed.append(
+                            item.detach().cpu()
+                        )
+
+                self.features[layer_name] = processed
+
+
+            # Handle tensor outputs
+            elif torch.is_tensor(output):
+
+                self.features[layer_name] = (
+                    output.detach().cpu()
+                )
 
         return fn
 
@@ -24,7 +44,7 @@ class FeatureExtractor:
     def register_hooks(self):
 
         """
-        Attach hooks to selected YOLO layers.
+        Attach hooks to YOLO layers
         """
 
         for idx, layer in enumerate(self.model.model.model):

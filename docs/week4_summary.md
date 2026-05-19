@@ -167,3 +167,135 @@ Deeper layers:
 The system can now access intermediate feature activations required for future entropy estimation.
 
 No entropy calculations were performed yet.
+
+# Week 4 Day 5 — Runtime Modularization + Router Logic
+
+## Objective
+
+Prepare a modular multi-modality inference pipeline capable of routing RGB and thermal inputs to the correct detector.
+
+---
+
+# Components Implemented
+
+## 1. Detection Router
+
+Created:
+
+- src/inference/router.py
+
+Purpose:
+- route input frames based on modality metadata
+- avoid learned routing complexity
+- maintain deterministic behavior
+
+Routing logic used:
+
+- RGB → RGB detector
+- thermal → thermal detector
+
+No classifier-based routing was used.
+
+---
+
+## 2. Postprocessing Module
+
+Created:
+
+- src/inference/postprocess.py
+
+Responsibilities:
+
+- confidence filtering
+- structured bbox formatting
+- feature packaging
+- compatibility with reliability pipeline
+
+---
+
+# Runtime Pipeline
+
+Current runtime flow:
+
+Input Image
+→ Router
+→ Detector
+→ Postprocessing
+→ Feature Extraction
+→ Structured Output
+
+---
+
+# RGB Pipeline Validation
+
+RGB validation images from COCO subset were tested.
+
+Observed behavior:
+
+- RGB detector loaded successfully
+- router selected correct detector
+- outputs generated with modality = 0
+- structured outputs remained consistent
+
+Example output structure:
+
+{
+    "bbox": [...],
+    "confidence": ...,
+    "area": ...,
+    "aspect_ratio": ...,
+    "modality": 0
+}
+
+---
+
+# Thermal Pipeline Validation
+
+Thermal validation images from LLVIP were tested.
+
+Observed behavior:
+
+- thermal detector loaded correctly
+- outputs generated with modality = 1
+- feature extraction remained stable
+
+---
+
+# Architectural Improvements
+
+The project is now modularized into separate responsibilities:
+
+- detector.py → inference only
+- router.py → modality selection
+- postprocess.py → runtime cleanup
+- features.py → feature extraction
+
+This reduces notebook dependency and improves maintainability.
+
+---
+
+# Important Outcome
+
+The system now supports modality-aware runtime inference using reusable modules instead of isolated notebook logic.
+
+This prepares the architecture for:
+
+- entropy integration
+- reliability estimation
+- fusion logic
+- Kalman tracking
+- future deployment pipeline
+
+---
+
+# Current System Status
+
+The runtime pipeline can now perform:
+
+image
+→ modality routing
+→ detector inference
+→ feature extraction
+→ structured metadata generation
+
+for both RGB and thermal modalities.

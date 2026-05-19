@@ -82,8 +82,30 @@ for layer_name, tensor in features.items():
 
     print(f"\n{layer_name}")
 
-    print(f"Shape: {tuple(tensor.shape)}")
+    # =====================
+    # SINGLE TENSOR
+    # =====================
 
+    if hasattr(tensor, "shape"):
+
+        print(f"Shape: {tuple(tensor.shape)}")
+
+
+    # =====================
+    # LIST OF TENSORS
+    # =====================
+
+    elif isinstance(tensor, list):
+
+        print(f"List with {len(tensor)} tensors")
+
+        for idx, item in enumerate(tensor):
+
+            if hasattr(item, "shape"):
+
+                print(
+                    f"  Tensor {idx}: {tuple(item.shape)}"
+                )
 
 # =========================
 # CLEANUP
