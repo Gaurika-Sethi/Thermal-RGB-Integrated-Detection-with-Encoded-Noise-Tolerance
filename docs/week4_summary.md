@@ -299,3 +299,27 @@ image
 → structured metadata generation
 
 for both RGB and thermal modalities.
+
+# Automated Metadata Analysis
+
+Detector outputs were analyzed automatically using structured metadata statistics.
+
+Observed statistics:
+
+- Total detections: 63
+- Average confidence: 0.7754
+- Low-confidence detections: 0
+- Weird aspect ratio detections: 1
+- Crowded images detected: 5
+
+Key observations:
+
+- detector outputs remained stable during batch inference
+- no major detection explosion observed
+- no severe localization corruption observed
+- crowded scenes remain potentially difficult cases
+
+One detection with unusual aspect ratio was identified:
+- 190013.jpg → aspect_ratio = 1.5146
+
+This suggests that metadata-based heuristics can help identify suspicious detections before full reliability modeling is introduced.
