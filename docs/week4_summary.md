@@ -323,3 +323,124 @@ One detection with unusual aspect ratio was identified:
 - 190013.jpg → aspect_ratio = 1.5146
 
 This suggests that metadata-based heuristics can help identify suspicious detections before full reliability modeling is introduced.
+
+# Week 4 Summary
+
+## Objective
+
+Transition from experimental YOLO inference toward a modular reliability-ready perception pipeline.
+
+---
+
+# Major Achievements
+
+## 1. Runtime Modularization
+
+Implemented modular runtime components:
+
+- detector wrapper
+- modality router
+- postprocessing pipeline
+- feature extraction pipeline
+
+---
+
+## 2. Structured Detection Outputs
+
+Detector outputs now include:
+
+- bbox
+- confidence
+- area
+- aspect_ratio
+- modality
+
+Outputs are reliability-ready.
+
+---
+
+## 3. Batch Inference Pipeline
+
+Implemented dataset-scale inference generation with:
+
+- metadata export
+- visualization generation
+- runtime stability validation
+
+---
+
+## 4. Intermediate Feature Access
+
+Implemented PyTorch forward hook infrastructure for:
+
+- intermediate tensor extraction
+- future entropy estimation
+- reliability feature expansion
+
+---
+
+## 5. Multi-Modality Runtime Support
+
+Implemented explicit routing:
+
+- RGB → RGB detector
+- thermal → thermal detector
+
+No learned routing used.
+
+---
+
+## 6. Automated Detector Analysis
+
+Implemented metadata-based analysis for:
+
+- crowded scenes
+- unusual detections
+- aspect ratio anomalies
+- confidence statistics
+
+This reduced manual inspection workload.
+
+---
+
+# Important Outcomes
+
+The system now supports:
+
+image
+→ modality routing
+→ detector inference
+→ feature extraction
+→ metadata generation
+→ structured runtime outputs
+
+The architecture is now prepared for:
+
+- RT-DETR supervision
+- reliability label generation
+- entropy integration
+- reliability MLP training
+- Kalman integration
+
+---
+
+# Stable Checkpoints
+
+Promoted:
+
+- thermal_detector_stable.pt
+- rgb_detector_stable.pt
+
+These will be used for Week 5 reliability development.
+
+---
+
+# Current System Status
+
+The project has transitioned from:
+
+experimental detector training
+
+to:
+
+modular uncertainty-aware perception system development
