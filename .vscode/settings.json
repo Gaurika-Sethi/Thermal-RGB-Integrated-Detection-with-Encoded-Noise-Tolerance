@@ -1,0 +1,8 @@
+{
+    "python.analysis.extraPaths": [
+        "C:\\Program Files\\MSC.Software\\Adams Student Edition\\2025_1\\python\\win64\\Lib\\site-packages"
+    ],
+    "python.autoComplete.extraPaths": [
+        "C:\\Program Files\\MSC.Software\\Adams Student Edition\\2025_1\\python\\win64\\Lib\\site-packages"
+    ]
+}
