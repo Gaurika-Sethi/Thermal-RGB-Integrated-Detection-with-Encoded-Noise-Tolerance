@@ -1,5 +1,3 @@
-# src/utils/video_utils.py
-
 import cv2
 import os
 
@@ -23,3 +21,60 @@ def get_video_info(video_path):
         "fps": fps,
         "frame_count": frame_count
     }
+
+
+def extract_frames(video_path, output_folder):
+
+    output_folder = "../../data/processed/extracted_frames"
+
+    os.makedirs(output_folder, exist_ok=True)
+
+    cap = cv2.VideoCapture(video_path)
+
+    frame_idx = 0
+
+    while True:
+
+        ret, frame = cap.read()
+
+        if not ret:
+            break
+
+        frame_name = os.path.join(
+            output_folder,
+            f"frame_{frame_idx:04d}.jpg"
+        )
+
+        cv2.imwrite(frame_name, frame)
+
+        frame_idx += 1
+
+    cap.release()
+
+    print(f"Saved {frame_idx} frames")
+
+    os.makedirs(output_folder, exist_ok=True)
+
+    cap = cv2.VideoCapture(video_path)
+
+    frame_idx = 0
+
+    while True:
+
+        ret, frame = cap.read()
+
+        if not ret:
+            break
+
+        frame_name = os.path.join(
+            output_folder,
+            f"frame_{frame_idx:04d}.jpg"
+        )
+
+        cv2.imwrite(frame_name, frame)
+
+        frame_idx += 1
+
+    cap.release()
+
+    print(f"Saved {frame_idx} frames")
