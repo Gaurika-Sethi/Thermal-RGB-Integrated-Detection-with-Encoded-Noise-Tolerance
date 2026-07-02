@@ -8,4 +8,6 @@ data/processed/
 
 outputs/
 
+datasets/
+
 .env
