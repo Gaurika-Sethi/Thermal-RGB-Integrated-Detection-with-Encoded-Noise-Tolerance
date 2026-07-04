@@ -1,0 +1,5 @@
+path: /content/drive/MyDrive/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/datasets/flir/flir_yolo
+train: images/train
+val: images/val
+names:
+  0: person

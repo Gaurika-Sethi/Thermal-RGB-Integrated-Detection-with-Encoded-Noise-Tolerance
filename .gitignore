@@ -8,6 +8,8 @@ data/processed/
 
 outputs/
 
-datasets/
+datasets/images_rgb_train/
+datasets/images_thermal_val/
+datasets/images_thermal_test/
 
 .env
