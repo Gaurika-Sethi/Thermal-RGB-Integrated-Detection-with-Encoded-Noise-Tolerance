@@ -8,8 +8,9 @@ data/processed/
 
 outputs/
 
-datasets/images_rgb_train/
-datasets/images_thermal_val/
-datasets/images_thermal_test/
+datasets/flir/images_thermal_train/
+datasets/flir/images_thermal_val/
+datasets/flir/images_thermal_test/
+datasets/flir/video_thermal_test/
 
 .env
