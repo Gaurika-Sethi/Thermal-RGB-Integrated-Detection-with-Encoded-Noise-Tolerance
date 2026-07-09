@@ -6,8 +6,6 @@ __pycache__/
 data/raw/
 data/processed/
 
-outputs/
-
 datasets/flir/images_thermal_train/
 datasets/flir/images_thermal_val/
 datasets/flir/images_thermal_test/
