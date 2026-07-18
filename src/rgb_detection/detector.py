@@ -100,3 +100,10 @@ def detect_people(video_path, output_csv):
     df.to_csv(output_csv, index=False)
 
     print("Done")
+
+if __name__ == "__main__":
+
+    video_path = "../../data/raw/sample.mp4"
+    output_csv = "../../outputs/rgb_detections.csv"
+
+    detect_people(video_path, output_csv)
