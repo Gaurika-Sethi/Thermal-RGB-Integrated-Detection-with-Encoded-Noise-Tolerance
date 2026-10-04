@@ -5,6 +5,7 @@ from ultralytics import YOLO
 def detect_people(video_path, output_csv):
 
     model = YOLO("yolov8n.pt")
+    print("Trying to open:", video_path)
 
     cap = cv2.VideoCapture(video_path)
 
@@ -62,7 +63,6 @@ def detect_people(video_path, output_csv):
             print("Person detected!")
 
             person_found = True
-            break
 
         if not person_found:
 
@@ -103,7 +103,8 @@ def detect_people(video_path, output_csv):
 
 if __name__ == "__main__":
 
-    video_path = "../../data/raw/sample.mp4"
-    output_csv = "../../outputs/rgb_detections.csv"
+    video_path = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/data/raw/rgb_vid.mp4"
+
+    output_csv = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/outputs/rgb_multiple_people.csv"
 
     detect_people(video_path, output_csv)
