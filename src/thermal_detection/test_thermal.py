@@ -3,9 +3,10 @@ from detector import detect_people
 
 project_root = Path(__file__).resolve().parents[2]
 
-video_path = project_root / "data" / "raw" / "thermal_sample.mp4"
+video_path = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/data/raw/thermal_vid.mp4"
 
-output_csv = project_root / "outputs" / "thermal_detections.csv"
+output_csv = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/outputs/thermal_multiple_people.csv"
+
 
 detect_people(
     video_path,

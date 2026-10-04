@@ -6,7 +6,8 @@ from ultralytics import YOLO
 
 def detect_people(video_path, output_csv):
     """
-    Detect people in a thermal video using the trained YOLOv8 thermal model.
+    Detect all people in a thermal video using the trained YOLOv8
+    thermal model.
 
     Output CSV format:
     frame,x,y,width,height,confidence
@@ -22,7 +23,7 @@ def detect_people(video_path, output_csv):
         )
 
     print("=" * 60)
-    print("THERMAL PERSON DETECTOR")
+    print("THERMAL MULTI-PERSON DETECTOR")
     print("=" * 60)
 
     print(f"Loading model:\n{model_path}")
@@ -48,7 +49,6 @@ def detect_people(video_path, output_csv):
     print()
 
     detections = []
-
     frame_number = 0
 
     while True:
@@ -59,7 +59,10 @@ def detect_people(video_path, output_csv):
             break
 
         if frame_number % 10 == 0:
-            print(f"Processing frame {frame_number}/{total_frames}")
+            print(
+                f"Processing frame "
+                f"{frame_number}/{total_frames}"
+            )
 
         results = model.predict(
             source=frame,
@@ -69,7 +72,40 @@ def detect_people(video_path, output_csv):
 
         boxes = results[0].boxes
 
-        if len(boxes) == 0:
+        person_count = 0
+
+        for box in boxes:
+
+            cls = int(box.cls[0])
+
+            # Class 0 = person
+            if cls != 0:
+                continue
+
+            confidence = float(box.conf[0])
+
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+
+            x_center = (x1 + x2) / 2
+            y_center = (y1 + y2) / 2
+
+            width = x2 - x1
+            height = y2 - y1
+
+            detections.append([
+                frame_number,
+                x_center,
+                y_center,
+                width,
+                height,
+                confidence
+            ])
+
+            person_count += 1
+
+        # Preserve one row for frames with no detection,
+        # matching the existing RGB pipeline.
+        if person_count == 0:
 
             detections.append([
                 frame_number,
@@ -79,33 +115,6 @@ def detect_people(video_path, output_csv):
                 None,
                 0.0
             ])
-
-            frame_number += 1
-            continue
-
-        best_box = max(
-            boxes,
-            key=lambda b: float(b.conf[0])
-        )
-
-        x1, y1, x2, y2 = best_box.xyxy[0].tolist()
-
-        confidence = float(best_box.conf[0])
-
-        x_center = (x1 + x2) / 2
-        y_center = (y1 + y2) / 2
-
-        width = x2 - x1
-        height = y2 - y1
-
-        detections.append([
-            frame_number,
-            x_center,
-            y_center,
-            width,
-            height,
-            confidence
-        ])
 
         frame_number += 1
 
@@ -130,11 +139,32 @@ def detect_people(video_path, output_csv):
         exist_ok=True
     )
 
-    df.to_csv(output_csv, index=False)
+    df.to_csv(
+        output_csv,
+        index=False
+    )
+
+    detection_rows = (
+        df["confidence"] > 0
+    ).sum()
+
+    detected_frames = (
+        df["confidence"] > 0
+    ).groupby(df["frame"]).any().sum()
+
+    no_detection_frames = (
+        df["confidence"] == 0
+    ).sum()
 
     print()
     print("=" * 60)
-    print("INFERENCE COMPLETE")
+    print("THERMAL MULTI-PERSON INFERENCE COMPLETE")
     print("=" * 60)
-    print(f"Frames processed : {len(df)}")
-    print(f"CSV saved to      : {output_csv}")
+
+    print(f"Total frames       : {total_frames}")
+    print(f"Detection rows     : {detection_rows}")
+    print(f"Detected frames    : {detected_frames}")
+    print(f"No-detection rows  : {no_detection_frames}")
+    print(f"Total CSV rows     : {len(df)}")
+
+    print(f"\nCSV saved to:\n{output_csv}")
