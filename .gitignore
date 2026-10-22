@@ -13,3 +13,4 @@ datasets/flir/images_thermal_test/
 datasets/flir/video_thermal_test/
 
 .env
+/.venv_bytetrack
