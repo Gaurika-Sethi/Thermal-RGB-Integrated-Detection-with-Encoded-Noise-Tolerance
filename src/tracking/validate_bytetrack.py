@@ -14,6 +14,9 @@ REPORT_FILE = ROOT / "outputs" / "bytetrack_validation_report.txt"
 TRACK_SUMMARY_FILE = ROOT / "outputs" / "track_summary.csv"
 FRAME_SUMMARY_FILE = ROOT / "outputs" / "track_frame_summary.csv"
 
+# A track is considered very short when it appears in fewer than 5 unique frames.
+SHORT_TRACK_THRESHOLD = 5
+
 
 def main():
     for path in [INPUT_CSV, TRACKED_CSV]:
@@ -175,14 +178,14 @@ def main():
             track_summary["observed_frames"] / track_summary["span_frames"]
         )
 
-        short_tracks = int((track_summary["observed_frames"] < 3).sum())
+        short_tracks = int((track_summary["observed_frames"] < SHORT_TRACK_THRESHOLD).sum())
         fragmented_tracks = int(
             (track_summary["missing_frames_inside_span"] > 0).sum()
         )
 
         check(
             short_tracks == 0,
-            f"No very short tracks (fewer than 3 observed frames); found {short_tracks}",
+            f"Tracks with fewer than {SHORT_TRACK_THRESHOLD} observed frames: {short_tracks}",
         )
 
         # This is diagnostic rather than a correctness requirement.
@@ -217,8 +220,8 @@ def main():
             f"{int((track_summary['missing_frames_inside_span'] > 0).sum())}"
         )
         print(
-            "Tracks observed in < 3 frames: "
-            f"{int((track_summary['observed_frames'] < 3).sum())}"
+            f"Tracks observed in < {SHORT_TRACK_THRESHOLD} frames: "
+            f"{int((track_summary['observed_frames'] < SHORT_TRACK_THRESHOLD).sum())}"
         )
 
     # ---------------------------------------------------------
