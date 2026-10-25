@@ -103,8 +103,8 @@ def detect_people(video_path, output_csv):
 
 if __name__ == "__main__":
 
-    video_path = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/data/raw/rgb_vid.mp4"
+    video_path = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/data/raw/RGB_dark_vid.mp4"
 
-    output_csv = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/outputs/rgb_multiple_people.csv"
+    output_csv = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/outputs/rgb_dark_detection.csv"
 
     detect_people(video_path, output_csv)
