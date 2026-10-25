@@ -4,9 +4,9 @@ from pathlib import Path
 
 
 # Paths
-video_path = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/data/raw/RGB_light_vid.mp4"
-csv_path = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/outputs/rgb_light_detection.csv"
-output_path = "C:/thermal project/Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance/outputs/RGB_light_detection_visualized.mp4"
+video_path = "../../data/raw/rgb_vid.mp4"
+csv_path = "../../outputs/rgb_multiple_people.csv"
+output_path = "../../outputs/rgb_predictions.mp4"
 
 
 # Load CSV
