@@ -14,11 +14,11 @@ MODEL_PATH = Path(
 )
 
 VIDEO_PATH = Path(
-    r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\data\raw\IR_light_vid.mp4"
+    r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\data\raw\IR_dark_15_vid.mp4"
 )
 
 OUTPUT_CSV = Path(
-    r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\outputs\IR_light_detection.csv"
+    r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\outputs\IR_15_dark_detection.csv"
 )
 
 CONFIDENCE_THRESHOLD = 0.25

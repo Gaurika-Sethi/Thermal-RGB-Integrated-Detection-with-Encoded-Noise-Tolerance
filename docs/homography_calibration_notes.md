@@ -1,0 +1,403 @@
+# Phase 3 — Homography Calibration
+## Days 6–8: Selected Dark and Light Video Pairs
+
+**Project:** Thermal-RGB Integrated Detection with Encoded Noise Tolerance  
+**Phase:** 3 — Homography Calibration  
+**Scope:** Two paired recordings only: one dark-scene pair and one light/daytime pair.
+
+## 1. Objective and scope
+
+Phase 3 maps IR coordinates into the corresponding RGB coordinate system so detections from both modalities can be compared and fused.
+
+The two selected datasets are:
+
+| Scene | RGB video | IR video |
+|---|---|---|
+| Dark | `data/raw/RGB_dark_vid.mp4` | `data/raw/IR_dark_vid.mp4` |
+| Light/daytime | `data/raw/RGB_light_vid.mp4` | `data/raw/IR_light_vid.mp4` |
+
+The same directory and filename convention is used for both scenes. Replace `_dark_` with `_light_` to refer to the corresponding light-scene file.
+
+**Scope boundary:** This document covers these two selected video pairs. It does not include the separate `dark-13` or `dark-15` test-video datasets mentioned in the later Phase 4 parameter-search plan. Do not treat those datasets as interchangeable with the selected dark-scene recording.
+
+The workflow is completed separately for each scene:
+
+1. **Day 6:** Estimate a scene-specific IR-to-RGB homography. Try ORB + RANSAC; use manual point correspondence if the automatic result is visually unreliable.
+2. **Day 7:** Visually validate the corrected IR imagery against RGB over 10 sampled frames.
+3. **Day 8:** Apply the corresponding scene-specific matrix to that scene's IR detection CSV, preserve original coordinates, and audit the output.
+
+---
+
+## 2. Day 6 — Homography estimation
+
+### Objective
+
+Estimate a homography matrix \(H\) that maps an IR point to the corresponding RGB coordinate:
+
+\[
+\begin{bmatrix}
+x'_{\mathrm{RGB}}\\
+y'_{\mathrm{RGB}}\\
+w'
+\end{bmatrix}
+=
+H
+\begin{bmatrix}
+x_{\mathrm{IR}}\\
+y_{\mathrm{IR}}\\
+1
+\end{bmatrix},
+\qquad
+x_{\mathrm{RGB}}=\frac{x'_{\mathrm{RGB}}}{w'},
+\quad
+y_{\mathrm{RGB}}=\frac{y'_{\mathrm{RGB}}}{w'}.
+\]
+
+A separate matrix must be retained for each scene. The dark-scene matrix must not be substituted for the light-scene matrix.
+
+### 2.1 Dark-scene pair
+
+**Inputs**
+- RGB: `data/raw/RGB_dark_vid.mp4`
+- IR: `data/raw/IR_dark_vid.mp4`
+- RGB detections: `outputs/rgb_dark_detection.csv`
+- IR detections: `outputs/IR_dark_detection.csv`
+
+Recorded video metadata:
+
+| Property | RGB | IR |
+|---|---:|---:|
+| Resolution | 1920 × 1080 | 1280 × 720 |
+| Frame rate | 25 FPS | 25 FPS |
+| Frame count | 4,168 | 4,168 |
+
+The IR frames were resized to RGB dimensions for ORB feature matching. A homography estimated in resized-IR coordinates must not be applied directly to detections expressed in the original IR coordinate system unless the resize-coordinate transformation is accounted for. The manual fallback used points selected in the original image coordinate systems.
+
+#### ORB + RANSAC attempt
+
+**Script:** `src/fusion/calibrate_orb_ransac.py`
+
+The script sampled frames, resized IR frames for feature matching, detected ORB features, matched descriptors using a brute-force matcher and Lowe's ratio test, and estimated candidate homographies with RANSAC.
+
+Best recorded candidate:
+
+| Metric | Result |
+|---|---:|
+| Candidate frame | 1875 |
+| RANSAC inliers | 20 |
+| Inlier ratio | 0.645 |
+| Median inlier reprojection error | 2.461 px |
+
+The matches were concentrated around a bright lamp. The warped overlay showed severe streaking/distortion.
+
+**Decision:** Reject the ORB matrix. Its numerical metrics did not establish reliable scene-wide alignment.
+
+#### Manual point correspondence
+
+**Script:** `src/fusion/calibrate_manual_points.py`
+
+Six corresponding landmarks were selected in the RGB and IR images at frame 1875, using the original image coordinate systems. A homography was estimated from those point pairs.
+
+| Point | Reprojection error |
+|---|---:|
+| 1 | 7.65 px |
+| 2 | 9.61 px |
+| 3 | 3.57 px |
+| 4 | 5.92 px |
+| 5 | 1.00 px |
+| 6 | 0.76 px |
+| **Median** | **4.74 px** |
+| **Maximum** | **9.61 px** |
+
+These are errors on the selected calibration correspondences; they are not an independent measurement of accuracy across the entire scene.
+
+Dark-scene artifacts:
+
+`outputs/calibration/day6_dark/`
+
+- `manual_rgb_frame.jpg`
+- `manual_ir_frame.jpg`
+- `thermal_to_rgb_homography_manual_candidate.npy`
+- `manual_rgb_points.csv`
+- `manual_ir_points.csv`
+- `manual_candidate_overlay.jpg`
+
+**Dark Day 6 result:** ORB + RANSAC was attempted and rejected after visual inspection. The manual point-correspondence candidate proceeded to Day 7.
+
+### 2.2 Light/daytime pair
+
+**Inputs**
+- RGB: `data/raw/RGB_light_vid.mp4`
+- IR: `data/raw/IR_light_vid.mp4`
+- RGB detections: `outputs/rgb_light_detection.csv`
+- IR detections: `outputs/IR_light_detection.csv`
+
+Day 6 homography estimation was also performed for the light/daytime pair. The user confirmed completion of this estimation step.
+
+The exact light-scene ORB metrics, selected calibration frame, manual point errors, and matrix filename are not present in the supplied record. They are therefore intentionally not reproduced here. Retain and use the light-scene matrix generated by the light-scene calibration run.
+
+Expected matching artifact directory convention:
+
+`outputs/calibration/day6_light/`
+
+Confirm the actual matrix and artifact filenames against the project directory before using them in commands or documentation.
+
+**Light Day 6 result:** Complete, based on the user's confirmation. Use the light-scene-specific matrix for the light-scene detections.
+
+---
+
+## 3. Day 7 — Visual validation
+
+### Objective
+
+Validate that the homography-corrected IR imagery aligns acceptably with RGB across 10 sampled frames, rather than judging the result from the calibration frame alone.
+
+**Script:** `src/fusion/validate_homography_day7.py`
+
+The validation workflow:
+1. Loads the matching RGB and IR videos.
+2. Loads that scene's candidate homography.
+3. Samples 10 frames across the video.
+4. Warps the IR frame into RGB coordinate space.
+5. Saves RGB references, warped IR frames, blended overlays, a contact sheet, and a validation report.
+
+### 3.1 Dark-scene validation
+
+An initial attempt compared transformed IR detections against RGB detection boxes. This was not a suitable test for the dark scene because the RGB detector produced almost no detections. Validation was changed to visual inspection of the warped RGB/IR overlays.
+
+The user inspected the 10-frame contact sheet and confirmed that the visual validation passed.
+
+Artifacts:
+
+`outputs/calibration/day7_dark/`
+
+- `day7_visual_contact_sheet.jpg`
+- `day7_visual_validation_report.csv`
+- `frame_####_rgb.jpg`
+- `frame_####_warped_ir.jpg`
+- `frame_####_overlay.jpg`
+
+### 3.2 Light/daytime validation
+
+The user also confirmed that the light-scene homography was visually validated using the Day 7 workflow and that this step was performed.
+
+Expected matching artifact directory convention:
+
+`outputs/calibration/day7_light/`
+
+The detailed light-scene contact-sheet measurements and visual observations were not included in the supplied record. The result is recorded as user-confirmed completion, without inventing numerical alignment metrics.
+
+### Validation interpretation
+
+Visual inspection of 10 sampled frames is qualitative validation. It does not prove perfect alignment on every frame or every pixel. Residual misalignment can remain because of parallax, viewpoint differences, scene geometry, or imperfect landmark selection.
+
+---
+
+## 4. Day 8 — Apply homography and audit the detection CSVs
+
+### Objective
+
+Apply the validated, scene-specific homography to each IR detection CSV. Preserve original coordinates and verify row counts, valid-detection counts, and transformed coordinate bounds.
+
+**Application script:** `src/fusion/apply_homography.py`  
+**Verification script:** `src/fusion/verify_homography_day8.py`
+
+### 4.1 Dark-scene application
+
+Command used:
+
+```powershell
+python src/fusion/apply_homography.py `
+  --input outputs/IR_dark_detection.csv `
+  --output outputs/IR_dark_detection_calibrated_day8.csv `
+  --matrix outputs/calibration/day6_dark/thermal_to_rgb_homography_manual_candidate.npy
+```
+
+Application log:
+
+```text
+HOMOGRAPHY APPLICATION COMPLETE
+Input: outputs\IR_dark_detection.csv
+Output: outputs\IR_dark_detection_calibrated_day8.csv
+Matrix: outputs\calibration\day6_dark\thermal_to_rgb_homography_manual_candidate.npy
+Total rows: 4611
+Rows with valid centroids: 3714
+Rows without valid centroids: 897
+Original coordinates retained for audit.
+```
+
+Verification results:
+
+| Metric | Dark result |
+|---|---:|
+| Input rows | 4,611 |
+| Output rows | 4,611 |
+| Input valid detections | 3,714 |
+| Output valid detections | 3,714 |
+| Valid detections within RGB bounds | 3,714 |
+| Valid detections outside RGB bounds | 0 |
+| Structural validation | PASSED |
+
+### 4.2 Light/daytime application
+
+Output:
+
+`outputs/IR_light_detection_calibrated_day8.csv`
+
+The light-scene application and verification were performed using the light-scene-specific homography. The supplied verification output was:
+
+| Metric | Light result |
+|---|---:|
+| Input rows | 11,575 |
+| Output rows | 11,575 |
+| Input valid detections | 4,163 |
+| Output valid detections | 4,163 |
+| Rows without valid detections | 7,412 |
+| Valid detections within RGB bounds | 4,163 |
+| Valid detections outside RGB bounds | 0 |
+| Structural validation | PASSED |
+
+The uploaded calibrated light CSV was independently inspected for this document. It contains 11,575 rows and these columns:
+
+```text
+frame, x, y, width, height, confidence,
+original_x, original_y, calibration_applied
+```
+
+It contains 4,163 valid detections under the audit definition of non-null `x` and `y` with positive confidence. All 11,575 rows have `calibration_applied=True`.
+
+Sample calibrated light-scene rows from the recorded audit:
+
+| Frame | Original X | Original Y | Calibrated X | Calibrated Y | Confidence |
+|---:|---:|---:|---:|---:|---:|
+| 76 | 1175.837 | 51.300 | 1462.988 | 110.508 | 0.300 |
+| 259 | 461.979 | 260.489 | 751.221 | 422.717 | 0.267 |
+| 260 | 464.484 | 263.117 | 753.521 | 426.212 | 0.328 |
+| 264 | 424.430 | 466.266 | 703.318 | 708.346 | 0.348 |
+| 264 | 369.195 | 467.669 | 648.963 | 711.642 | 0.263 |
+| 274 | 568.827 | 319.002 | 852.888 | 499.418 | 0.496 |
+| 275 | 572.904 | 319.248 | 856.889 | 499.628 | 0.756 |
+| 276 | 581.081 | 319.240 | 864.940 | 499.360 | 0.807 |
+
+The uploaded calibrated dark CSV was also independently inspected. It contains 4,611 rows, the same nine-column schema, 3,714 valid detections, and `calibration_applied=True` for all rows.
+
+### 4.3 Coordinate ranges observed in the uploaded calibrated CSVs
+
+| Coordinate | Dark minimum | Dark maximum | Light minimum | Light maximum |
+|---|---:|---:|---:|---:|
+| Calibrated X | 615.216 | 1021.911 | 290.826 | 1554.902 |
+| Calibrated Y | 420.361 | 862.222 | 71.829 | 1041.398 |
+
+These observed coordinate ranges are consistent with the recorded RGB-frame bounds check for a 1920 × 1080 RGB frame. The coordinate-range check is a bounds check, not an independent geometric-accuracy measurement.
+
+### 4.4 Coordinate and schema notes
+
+The calibrated CSVs preserve the original centroid values in `original_x` and `original_y`; transformed centroid coordinates are stored in `x` and `y`.
+
+The files retain these columns:
+
+```text
+frame, x, y, width, height, confidence,
+original_x, original_y, calibration_applied
+```
+
+The current Day 8 evidence establishes centroid transformation and preservation of the CSV rows. Do not assume that `width` and `height` have been geometrically transformed by the homography; the current application workflow described here transforms centroid coordinates.
+
+---
+
+## 5. Combined results for the two selected video pairs
+
+| Metric | Dark scene | Light/daytime scene |
+|---|---:|---:|
+| Input rows | 4,611 | 11,575 |
+| Output rows | 4,611 | 11,575 |
+| Valid detections | 3,714 | 4,163 |
+| Rows without valid detections | 897 | 7,412 |
+| Valid detections within RGB bounds | 3,714 | 4,163 |
+| Valid detections outside RGB bounds | 0 | 0 |
+| Day 6 estimation | Complete | Complete |
+| Day 7 visual validation | User-approved | User-confirmed complete |
+| Day 8 structural audit | Passed | Passed |
+
+The valid-detection proportions are approximately:
+
+- Dark: 3,714 / 4,611 = **80.5%**
+- Light: 4,163 / 11,575 = **36.0%**
+
+These percentages describe the composition of the detection CSV rows. They are not detector accuracy, recall, or homography accuracy metrics.
+
+---
+
+## 6. Important implementation decisions and limitations
+
+1. **Use separate matrices.** Each scene must use the homography estimated and validated for its own RGB/IR pair.
+2. **Calibrate before fusion.** IR centroid coordinates must be mapped into RGB coordinate space before RGB–IR matching and fusion.
+3. **Preserve original coordinates.** `original_x` and `original_y` support auditing and debugging.
+4. **Preserve rows without detections.** The Day 8 outputs retain all input rows, including rows with invalid/missing centroids.
+5. **Do not equate bounds with accuracy.** The Day 8 audit establishes structural integrity and that valid centroids lie within the RGB frame bounds. Day 7 supplies qualitative visual evidence.
+6. **Keep the light-scene evidence distinct.** The light-scene Day 6/7 completion is user-confirmed, but its detailed ORB/manual-point metrics were not supplied in the source notes.
+7. **Centroid transformation is established; box transformation is not.** Do not assume the stored `width` and `height` values were transformed by the homography.
+8. **Keep these two selected recordings distinct from dark-13/dark-15.** Those names belong to the separate three-video experiment described in the Phase 4 material unless the project owner explicitly maps them to these files.
+
+---
+
+## 7. Project files and paths
+
+### Shared scripts
+
+```text
+src/fusion/calibrate_orb_ransac.py
+src/fusion/calibrate_manual_points.py
+src/fusion/validate_homography_day7.py
+src/fusion/apply_homography.py
+src/fusion/verify_homography_day8.py
+```
+
+### Dark-scene files
+
+```text
+data/raw/RGB_dark_vid.mp4
+data/raw/IR_dark_vid.mp4
+
+outputs/rgb_dark_detection.csv
+outputs/IR_dark_detection.csv
+outputs/IR_dark_detection_calibrated_day8.csv
+
+outputs/calibration/day6_dark/
+outputs/calibration/day7_dark/
+```
+
+### Light/daytime files
+
+```text
+data/raw/RGB_light_vid.mp4
+data/raw/IR_light_vid.mp4
+
+outputs/rgb_light_detection.csv
+outputs/IR_light_detection.csv
+outputs/IR_light_detection_calibrated_day8.csv
+
+outputs/calibration/day6_light/
+outputs/calibration/day7_light/
+```
+
+The directory and filename convention is the same for both recordings: replace `_dark_` with `_light_` for the light-scene counterpart. Confirm the exact light-scene matrix and artifact filenames in the project directory before using them in commands.
+
+---
+
+## 8. Final conclusion
+
+**Phase 3 — Homography Calibration, Days 6–8, is complete for the two selected video pairs: dark and light/daytime.**
+
+For the dark pair, ORB + RANSAC was attempted but rejected after visual inspection. Manual point correspondence produced the candidate homography, which was visually approved using the 10-frame Day 7 contact sheet. The Day 8 application preserved all 4,611 rows and all 3,714 valid detections; all valid transformed centroids were within RGB frame bounds.
+
+For the light pair, the user confirmed that Day 6 estimation and Day 7 visual validation were also performed. The Day 8 calibrated CSV contains 11,575 rows and 4,163 valid detections, with original coordinates retained and all valid transformed centroids within RGB frame bounds.
+
+The two calibrated outputs to carry forward are:
+
+```text
+outputs/IR_dark_detection_calibrated_day8.csv
+outputs/IR_light_detection_calibrated_day8.csv
+```
+
+Use each calibrated IR CSV only with its corresponding RGB detections and scene-specific calibration artifacts in downstream processing.
