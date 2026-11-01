@@ -16,10 +16,6 @@ The two selected datasets are:
 | Dark | `data/raw/RGB_dark_vid.mp4` | `data/raw/IR_dark_vid.mp4` |
 | Light/daytime | `data/raw/RGB_light_vid.mp4` | `data/raw/IR_light_vid.mp4` |
 
-The same directory and filename convention is used for both scenes. Replace `_dark_` with `_light_` to refer to the corresponding light-scene file.
-
-**Scope boundary:** This document covers these two selected video pairs. It does not include the separate `dark-13` or `dark-15` test-video datasets mentioned in the later Phase 4 parameter-search plan. Do not treat those datasets as interchangeable with the selected dark-scene recording.
-
 The workflow is completed separately for each scene:
 
 1. **Day 6:** Estimate a scene-specific IR-to-RGB homography. Try ORB + RANSAC; use manual point correspondence if the automatic result is visually unreliable.
@@ -152,7 +148,7 @@ Confirm the actual matrix and artifact filenames against the project directory b
 
 Validate that the homography-corrected IR imagery aligns acceptably with RGB across 10 sampled frames, rather than judging the result from the calibration frame alone.
 
-**Script:** `src/fusion/validate_homography_day7.py`
+**Script:** `src/fusion/validate_homography.py`
 
 The validation workflow:
 1. Loads the matching RGB and IR videos.
@@ -348,7 +344,7 @@ These percentages describe the composition of the detection CSV rows. They are n
 ```text
 src/fusion/calibrate_orb_ransac.py
 src/fusion/calibrate_manual_points.py
-src/fusion/validate_homography_day7.py
+src/fusion/validate_homography.py
 src/fusion/apply_homography.py
 src/fusion/verify_homography_day8.py
 ```
@@ -361,7 +357,7 @@ data/raw/IR_dark_vid.mp4
 
 outputs/rgb_dark_detection.csv
 outputs/IR_dark_detection.csv
-outputs/IR_dark_detection_calibrated_day8.csv
+outputs/IR_dark_detection_calibrated.csv
 
 outputs/calibration/day6_dark/
 outputs/calibration/day7_dark/
@@ -375,13 +371,11 @@ data/raw/IR_light_vid.mp4
 
 outputs/rgb_light_detection.csv
 outputs/IR_light_detection.csv
-outputs/IR_light_detection_calibrated_day8.csv
+outputs/IR_light_detection_calibrated.csv
 
 outputs/calibration/day6_light/
 outputs/calibration/day7_light/
 ```
-
-The directory and filename convention is the same for both recordings: replace `_dark_` with `_light_` for the light-scene counterpart. Confirm the exact light-scene matrix and artifact filenames in the project directory before using them in commands.
 
 ---
 
@@ -396,8 +390,8 @@ For the light pair, the user confirmed that Day 6 estimation and Day 7 visual va
 The two calibrated outputs to carry forward are:
 
 ```text
-outputs/IR_dark_detection_calibrated_day8.csv
-outputs/IR_light_detection_calibrated_day8.csv
+outputs/IR_dark_detection_calibrated.csv
+outputs/IR_light_detection_calibrated.csv
 ```
 
 Use each calibrated IR CSV only with its corresponding RGB detections and scene-specific calibration artifacts in downstream processing.

@@ -83,7 +83,7 @@ The Days 9--15 workflow consists of the following stages:
   `src/tracking/prepare_bytetrack_input.py`   Existing conversion to ByteTrack
                                               input; unchanged
 
-  `scripts/audit_day15.py`                    Final CSV and parameter audit
+  `scripts/audit_fusion.py`                    Final CSV and parameter audit
   -------------------------------------------------------------------------------
 
 ### Important output files
@@ -106,14 +106,14 @@ The Days 9--15 workflow consists of the following stages:
   `outputs/IR_dark_detection_warped.csv`                    Dark thermal detections after box
                                                             transformation
 
-  `outputs/fused_detections_adaptive_light.csv`             Adaptive Light fused detections
+  `outputs/fused_detections_light.csv`             Adaptive Light fused detections
 
-  `outputs/fused_detections_adaptive_dark.csv`              Adaptive Dark fused detections
+  `outputs/fused_detections_dark.csv`              Adaptive Dark fused detections
 
-  `outputs/bytetrack_detections_adaptive_light_audit.csv`   Light ByteTrack compatibility audit
+  `outputs/bytetrack_detections_light_audit.csv`   Light ByteTrack compatibility audit
                                                             output
 
-  `outputs/bytetrack_detections_adaptive_dark_audit.csv`    Dark ByteTrack compatibility audit
+  `outputs/bytetrack_detections_dark_audit.csv`    Dark ByteTrack compatibility audit
                                                             output
   ---------------------------------------------------------------------------------------------
 
@@ -536,20 +536,20 @@ Dark:
 
 ``` powershell
 python src/tracking/prepare_bytetrack_input.py `
-    --fused outputs/fused_detections_adaptive_dark.csv `
+    --fused outputs/fused_detections_dark.csv `
     --rgb outputs/rgb_dark_detection.csv `
     --thermal outputs/IR_dark_detection_warped.csv `
-    --output outputs/bytetrack_detections_adaptive_dark_audit.csv
+    --output outputs/bytetrack_detections_dark_audit.csv
 ```
 
 Light:
 
 ``` powershell
 python src/tracking/prepare_bytetrack_input.py `
-    --fused outputs/fused_detections_adaptive_light.csv `
+    --fused outputs/fused_detections_light.csv `
     --rgb outputs/rgb_light_detection.csv `
     --thermal outputs/IR_light_detection_warped.csv `
-    --output outputs/bytetrack_detections_adaptive_light_audit.csv
+    --output outputs/bytetrack_detections_light_audit.csv
 ```
 
 ### 7.2 Required ByteTrack columns
@@ -698,7 +698,7 @@ not established.
 The final audit script was run:
 
 ``` text
-scripts/audit_day15.py
+scripts/audit_fusion.py
 ```
 
 ### 10.1 Parameter checks
@@ -877,15 +877,3 @@ transparently. This report does not claim that every original roadmap
 target was met.
 
 ------------------------------------------------------------------------
-
-## 12. Suggested Git commit
-
-``` text
-feat(fusion): implement reliability-aware adaptive RGB-IR fusion
-```
-
-A more descriptive alternative:
-
-``` text
-feat(fusion): add rolling reliability, adaptive weighting and validation
-```
