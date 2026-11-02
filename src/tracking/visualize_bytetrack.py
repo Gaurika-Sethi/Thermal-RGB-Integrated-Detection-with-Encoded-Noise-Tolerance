@@ -8,9 +8,7 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-DEFAULT_VIDEO = PROJECT_ROOT / "data" / "raw" / "rgb_vid.mp4"
-DEFAULT_TRACKS = PROJECT_ROOT / "outputs" / "tracked_detections.csv"
-DEFAULT_OUTPUT = PROJECT_ROOT / "outputs" / "bytetrack_visualization.mp4"
+DEFAULT_VIDEO = PROJECT_ROOT / "data" / "raw" / "IR_dark_vid.mp4"
 
 
 def color_for_id(track_id):
@@ -26,9 +24,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Visualize ByteTrack IDs on a video."
     )
+
     parser.add_argument("--video", type=Path, default=DEFAULT_VIDEO)
-    parser.add_argument("--tracks", type=Path, default=DEFAULT_TRACKS)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--tracks", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--name", type=str, required=True)
+
     args = parser.parse_args()
 
     if not args.video.exists():
@@ -38,19 +39,32 @@ def main():
         )
 
     if not args.tracks.exists():
-        raise FileNotFoundError(f"Tracking CSV not found: {args.tracks}")
+        raise FileNotFoundError(
+            f"Tracking CSV not found: {args.tracks}"
+        )
 
     tracks = pd.read_csv(args.tracks)
 
     required = {
-        "frame", "x1", "y1", "x2", "y2", "track_id", "confidence"
+        "frame", "x1", "y1", "x2", "y2",
+        "track_id", "confidence"
     }
+
     missing = required - set(tracks.columns)
+
     if missing:
-        raise ValueError(f"Tracking CSV missing columns: {sorted(missing)}")
+        raise ValueError(
+            f"Tracking CSV missing columns: {sorted(missing)}"
+        )
+
+    if tracks.empty:
+        raise ValueError("Tracking CSV is empty.")
 
     tracks["frame"] = tracks["frame"].astype(int)
     tracks["track_id"] = tracks["track_id"].astype(int)
+
+    if tracks["frame"].min() < 0:
+        raise ValueError("Tracking CSV contains negative frame indices.")
 
     by_frame = {
         frame: group
@@ -58,8 +72,11 @@ def main():
     }
 
     cap = cv2.VideoCapture(str(args.video))
+
     if not cap.isOpened():
-        raise RuntimeError(f"Could not open video: {args.video}")
+        raise RuntimeError(
+            f"Could not open video: {args.video}"
+        )
 
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -69,7 +86,15 @@ def main():
     if fps <= 0:
         fps = 30.0
 
+    if tracks["frame"].max() >= video_frames:
+        cap.release()
+        raise ValueError(
+            "Tracking CSV contains frame indices outside the video range. "
+            "Check video and tracking CSV alignment."
+        )
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
+
     writer = cv2.VideoWriter(
         str(args.output),
         cv2.VideoWriter_fourcc(*"mp4v"),
@@ -79,7 +104,9 @@ def main():
 
     if not writer.isOpened():
         cap.release()
-        raise RuntimeError(f"Could not create output video: {args.output}")
+        raise RuntimeError(
+            f"Could not create output video: {args.output}"
+        )
 
     frame_index = 0
     annotated_frames = 0
@@ -87,6 +114,7 @@ def main():
 
     while True:
         success, frame = cap.read()
+
         if not success:
             break
 
@@ -100,10 +128,10 @@ def main():
                 y1 = int(round(row.y1))
                 x2 = int(round(row.x2))
                 y2 = int(round(row.y2))
+
                 track_id = int(row.track_id)
                 confidence = float(row.confidence)
 
-                # Clip to the actual video dimensions.
                 x1 = max(0, min(x1, width - 1))
                 x2 = max(0, min(x2, width - 1))
                 y1 = max(0, min(y1, height - 1))
@@ -115,18 +143,27 @@ def main():
                 color = color_for_id(track_id)
 
                 cv2.rectangle(
-                    frame, (x1, y1), (x2, y2), color, 2
+                    frame,
+                    (x1, y1),
+                    (x2, y2),
+                    color,
+                    2,
                 )
 
                 label = f"ID {track_id} | {confidence:.2f}"
+
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 scale = 0.6
                 thickness = 2
+
                 (text_w, text_h), baseline = cv2.getTextSize(
                     label, font, scale, thickness
                 )
 
-                label_top = max(0, y1 - text_h - baseline - 8)
+                label_top = max(
+                    0, y1 - text_h - baseline - 8
+                )
+
                 cv2.rectangle(
                     frame,
                     (x1, label_top),
@@ -134,6 +171,7 @@ def main():
                     color,
                     -1,
                 )
+
                 cv2.putText(
                     frame,
                     label,
@@ -147,10 +185,14 @@ def main():
 
             annotated_frames += 1
 
+        object_count = (
+            0 if frame_tracks is None else len(frame_tracks)
+        )
+
         cv2.putText(
             frame,
-            f"Frame: {frame_index} | Tracked objects: "
-            f"{0 if frame_tracks is None else len(frame_tracks)}",
+            f"{args.name} | Frame: {frame_index} | "
+            f"Tracked objects: {object_count}",
             (20, 35),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.8,
@@ -167,29 +209,19 @@ def main():
 
     print("\nBYTETRACK VIDEO VISUALIZATION")
     print("=" * 48)
-    print(f"Input video:          {args.video}")
-    print(f"Video dimensions:     {width} x {height}")
-    print(f"Video FPS:            {fps:.2f}")
-    print(f"Video frames:         {video_frames}")
-    print(f"Frames processed:     {frame_index}")
-    print(f"Frames with tracks:   {frames_with_tracks}")
-    print(f"Unique track IDs:     {tracks['track_id'].nunique()}")
-    print(f"Output video:         {args.output}")
+    print(f"Configuration:       {args.name}")
+    print(f"Input video:         {args.video}")
+    print(f"Tracking CSV:        {args.tracks}")
+    print(f"Video dimensions:    {width} x {height}")
+    print(f"Video FPS:           {fps:.2f}")
+    print(f"Video frames:        {video_frames}")
+    print(f"Frames processed:    {frame_index}")
+    print(f"Frames with tracks:  {frames_with_tracks}")
+    print(f"Annotated frames:    {annotated_frames}")
+    print(f"Unique track IDs:    {tracks['track_id'].nunique()}")
+    print(f"Output video:        {args.output}")
 
-    if video_frames != tracks["frame"].nunique():
-        print(
-            "\nWARNING: Video frame count and tracked frame count differ. "
-            "Confirm that this is the matching video and that frame "
-            "numbering is aligned."
-        )
-
-    if width != 1920 or height != 1080:
-        print(
-            "\nWARNING: Video is not 1920x1080. Check coordinate alignment "
-            "before judging box placement."
-        )
-
-    print("\nOpen the output video and inspect ID continuity.")
+    print("\nVisualization completed successfully.")
 
 
 if __name__ == "__main__":

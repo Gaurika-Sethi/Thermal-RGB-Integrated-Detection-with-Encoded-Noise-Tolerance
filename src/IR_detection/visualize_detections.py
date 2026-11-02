@@ -14,15 +14,15 @@ def visualize_detections(video_path, csv_path, output_video):
     """
     
     video_path = Path(
-        r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\data\raw\IR_light_vid.mp4"
+        r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\data\raw\IR_dark_vid.mp4"
     )
     
     csv_path = Path(
-        r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\outputs\IR_light_detection.csv"
+        r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\outputs\IR_dark_detection.csv"
     )
 
     output_video = Path(
-        r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\outputs\IR_light_detection_visualized.mp4"
+        r"C:\thermal project\Thermal-RGB-Integrated-Detection-with-Encoded-Noise-Tolerance\outputs\IR_dark_detection_visualized.mp4"
     )
 
 
