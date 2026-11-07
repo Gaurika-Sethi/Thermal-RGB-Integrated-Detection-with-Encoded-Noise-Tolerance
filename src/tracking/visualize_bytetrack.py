@@ -4,6 +4,7 @@ import argparse
 
 import cv2
 import pandas as pd
+import numpy as np
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -29,8 +30,29 @@ def main():
     parser.add_argument("--tracks", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--name", type=str, required=True)
-
+    
+    parser.add_argument(
+        "--homography",
+        type=Path,
+        default=PROJECT_ROOT / "outputs" / "calibration"
+                / "day6_dark"
+                / "thermal_to_rgb_homography_manual_candidate.npy",
+        help="Thermal-to-RGB homography matrix."
+    )
+    
     args = parser.parse_args()
+
+    H = np.load(args.homography)
+
+    if H.shape != (3, 3):
+        raise ValueError(
+            f"Invalid homography shape: {H.shape}. Expected (3, 3)."
+        )
+    
+    if not np.isfinite(H).all():
+        raise ValueError("Homography contains non-finite values.")
+    
+    print(f"Loaded homography: {args.homography}")
 
     if not args.video.exists():
         raise FileNotFoundError(
@@ -95,13 +117,24 @@ def main():
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
+    output_width = 1920
+    output_height = 1080
+    
+    args.output = args.output.with_suffix(".avi")
+    
     writer = cv2.VideoWriter(
         str(args.output),
-        cv2.VideoWriter_fourcc(*"mp4v"),
+        cv2.VideoWriter_fourcc(*"MJPG"),
         fps,
-        (width, height),
+        (output_width, output_height),
     )
+    
+    if not writer.isOpened():
+        cap.release()
+        raise RuntimeError("Could not initialize AVI VideoWriter.")
 
+
+    
     if not writer.isOpened():
         cap.release()
         raise RuntimeError(
@@ -117,6 +150,19 @@ def main():
 
         if not success:
             break
+
+        frame = cv2.warpPerspective(
+            frame,
+            H,
+            (1920, 1080),
+            flags=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_CONSTANT,
+        )
+
+        if frame.shape[:2] != (1080, 1920):
+            raise ValueError(
+                f"Unexpected warped frame dimensions: {frame.shape}"
+            )
 
         frame_tracks = by_frame.get(frame_index)
 
@@ -222,7 +268,9 @@ def main():
     print(f"Output video:        {args.output}")
 
     print("\nVisualization completed successfully.")
-
-
+    
+    if not np.isfinite(H).all():
+        raise ValueError("Homography contains non-finite values.")
+    
 if __name__ == "__main__":
     main()
