@@ -12,13 +12,12 @@ from bytetracker import byte_tracker
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = ROOT / "outputs" / "day19_residuals"
 
-INPUT_CSV = ROOT / "outputs" / "bytetrack_detections_dark_audit.csv"
-FUSED_CSV = ROOT / "outputs" / "fused_detections_dark.csv"
-
-TRACKED_CSV = OUTPUT_DIR / "tracked_detections_dark_B0_residuals.csv"
-RESIDUAL_CSV = OUTPUT_DIR / "prediction_residuals_dark_B0.csv"
-TRAJECTORY_CSV = OUTPUT_DIR / "trajectory_dark_B0_residuals.csv"
-SUMMARY_CSV = OUTPUT_DIR / "residual_summary_dark_B0.csv"
+INPUT_CSV = ROOT / "outputs" / "bytetrack_detections_light_audit.csv"
+FUSED_CSV = ROOT / "outputs" / "fused_detections_light.csv"
+TRACKED_CSV = OUTPUT_DIR / "tracked_detections_light_B0_residuals_new.csv"
+RESIDUAL_CSV = OUTPUT_DIR / "prediction_residuals_light_B0_new.csv"
+TRAJECTORY_CSV = OUTPUT_DIR / "trajectory_light_B0_residuals_new.csv"
+SUMMARY_CSV = OUTPUT_DIR / "residual_summary_light_B0_new.csv"
 
 # Day 17/18 Light B0 parameters
 TRACK_THRESH = 0.45
@@ -131,13 +130,17 @@ def main():
         if new_xywh.shape != (4,) or not np.isfinite(new_xywh).all():
             raise RuntimeError("Matched detection has invalid internal box values.")
         frame_dets = current_frame_dets
-        input_xywh = np.column_stack([
-            (frame_dets["x1"] + frame_dets["x2"]).to_numpy(float) / 2.0,
-            (frame_dets["y1"] + frame_dets["y2"]).to_numpy(float) / 2.0,
+        input_tlwh = np.column_stack([
+            frame_dets["x1"].to_numpy(float),
+            frame_dets["y1"].to_numpy(float),
             (frame_dets["x2"] - frame_dets["x1"]).to_numpy(float),
             (frame_dets["y2"] - frame_dets["y1"]).to_numpy(float),
         ])
-        box_errors = np.max(np.abs(input_xywh - new_xywh[None, :]), axis=1)
+        
+        box_errors = np.max(
+            np.abs(input_tlwh - new_xywh[None, :]),
+            axis=1
+        )
         score_errors = np.abs(frame_dets["confidence"].to_numpy(float) - float(new_track.score))
         class_matches = frame_dets["class_id"].to_numpy(int) == int(new_track.cls)
         available = np.ones(len(frame_dets), dtype=bool)
@@ -147,6 +150,18 @@ def main():
             available & class_matches & (box_errors <= BOX_MATCH_TOLERANCE)
             & (score_errors <= CONF_MATCH_TOLERANCE)
         )
+        if len(candidates) != 1:
+            print("\n--- DETECTION MATCH DEBUG ---")
+            print("Frame:", current_frame)
+            print("new_track._tlwh:", new_xywh)
+            print("First input detection:")
+            print(frame_dets[["x1", "y1", "x2", "y2", "confidence"]].head(3))
+            print("First input TLWH:")
+            print(input_tlwh[:3])
+            print("First box errors:")
+            print(box_errors[:3])
+            print("New track score:", new_track.score)
+            print("----------------------------")
         if len(candidates) != 1:
             raise RuntimeError(
                 f"Frame {current_frame}: expected exactly one source detection match, got {len(candidates)}; "
@@ -171,7 +186,7 @@ def main():
         det_x = float((input_row.x1 + input_row.x2) / 2.0)
         det_y = float((input_row.y1 + input_row.y2) / 2.0)
         fused_x, fused_y = float(fused_row.fused_x), float(fused_row.fused_y)
-        residual = float(np.hypot(fused_x - predicted[0], fused_y - predicted[1]))
+        residual = float(np.hypot(det_x - predicted[0], det_y - predicted[1]))
         previous_match = last_match_frame.get(int(track.track_id))
         gap_frames = np.nan if previous_match is None else int(current_frame - previous_match - 1)
 
